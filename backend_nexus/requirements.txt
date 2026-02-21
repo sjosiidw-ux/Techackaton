@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+websockets
+traci
+ultralytics
+numpy
+opencv-python

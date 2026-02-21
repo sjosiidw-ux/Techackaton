@@ -1,0 +1,7 @@
+<routes>
+    <vType id="car" accel="1.0" decel="4.5" length="5" maxSpeed="20" guiShape="passenger"/>
+    <flow id="fn" begin="0" end="3600" probability="0.2" from="n_to_J1" to="J1_to_s" type="car"/>
+    <flow id="fe" begin="0" end="3600" probability="0.15" from="e_to_J1" to="J1_to_w" type="car"/>
+    <flow id="fs" begin="0" end="3600" probability="0.1" from="s_to_J1" to="J1_to_n" type="car"/>
+    <flow id="fw" begin="0" end="3600" probability="0.1" from="w_to_J1" to="J1_to_e" type="car"/>
+</routes>
