@@ -1,14 +1,26 @@
-from ultralytics import YOLO
-import cv2
 import logging
+
+# Lazy-import heavy/native libs so the backend can start in minimal environments
+try:
+    import cv2
+except Exception:
+    cv2 = None
+
+# Lazy-import YOLO to avoid hard dependency at module-import time
+try:
+    from ultralytics import YOLO
+except Exception:
+    YOLO = None
 
 class NexusVision:
     #def __init__(self, model_path="models/yolo11n_idd_finetuned.pt", video_source="traffic_sample.mp4"):
     def __init__(self, model_path="yolo11n.pt", source=0):
         self.active = False
         try:
-            # Source 164: Load fine-tuned model
-            self.model = YOLO(model_path) 
+            # Source 164: Load fine-tuned model (lazy-loaded)
+            if YOLO is None:
+                raise ImportError("ultralytics not installed")
+            self.model = YOLO(model_path)
             self.source = source
             self.active = True
         except Exception as e:

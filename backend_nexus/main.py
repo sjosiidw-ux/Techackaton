@@ -1,9 +1,9 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 import asyncio
-from app.simulation_core import NexusSimulation
+import app.simulation_core as sim_core
 from app.intelligence import NexusBrain
-from app.vision_bridge import NexusVision
+NexusVision = None
 
 app = FastAPI()
 
@@ -17,9 +17,14 @@ app.add_middleware(
 
 # Initialize Components
 SUMO_CFG = "sumo_config/nexus.sumocfg"
-sim = NexusSimulation(SUMO_CFG)
+# Choose real SUMO simulation if available, otherwise use the lightweight mock
+if getattr(sim_core, 'traci', None) is None:
+    print("⚠️ TraCI not available — using MockNexusSimulation for demo mode.")
+    sim = sim_core.MockNexusSimulation(SUMO_CFG)
+else:
+    sim = sim_core.NexusSimulation(SUMO_CFG)
 brain = NexusBrain()
-vision = NexusVision() # Falls back to mock if no camera
+vision = None
 
 simulation_running = False
 
@@ -32,6 +37,16 @@ async def startup_event():
         print("✅ NEXUS Simulation Started")
     except Exception as e:
         print(f"❌ Failed to start SUMO: {e}\n(Did you run setup_sumo.py?)")
+
+    # Try to initialize vision bridge lazily
+    global NexusVision, vision
+    try:
+        from app.vision_bridge import NexusVision as _NexusVision
+        NexusVision = _NexusVision
+        vision = NexusVision()  # will fall back to logic-only if libs missing
+    except Exception as e:
+        vision = None
+        print(f"⚠️ Vision bridge unavailable: {e}")
 
 @app.on_event("shutdown")
 def shutdown_event():
@@ -49,7 +64,7 @@ async def websocket_endpoint(websocket: WebSocket):
             
             # 2. Collect Data
             sim_pressure = sim.get_pressure()
-            real_pressure = vision.get_real_world_density() # From Member 2
+            real_pressure = vision.get_real_world_density() if vision else 0 # From Member 2
             
             # 3. AI Decision
             new_phase, log = brain.decide(sim_pressure, real_pressure, 0)
